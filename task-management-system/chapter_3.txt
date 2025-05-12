@@ -1,0 +1,158 @@
+---
+
+Chapter 3: Low-Level System Design: Diving into the Details
+In Low-Level System Design, we'll define the intricate details that power the system's functionality. This includes designing the database schema, specifying API endpoints, and detailing component interactions.
+Low-Level Design ensures that the system's foundation is strong and all components work together seamlessly. Let's dive in!
+What is Low-Level System Design?
+Low-Level Design focuses on the internal workings of the system. It answers questions like:
+How will the data be structured and stored?
+What are the input/output requirements for each component?
+How will individual modules interact with each other?
+
+In this post we'll focus on:
+Designing the database schema.
+Defining API specifications.
+Documenting key workflows.
+
+Database Schema Design
+A well-designed database schema is critical for efficient data storage and retrieval. For our Task Management System, we'll use MySQL to create the following tables:
+1. Users Table
+Stores user information for authentication and authorization.
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'user') DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+2. Tasks Table
+Stores information about tasks.
+CREATE TABLE Tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description TEXT,
+    status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+    priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+    due_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+3. Categories Table
+Stores task categories (optional).
+CREATE TABLE Categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+4. Notification Table
+Tracks overdue task notifications.
+CREATE TABLE Notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    task_id INT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id) REFERENCES Tasks(id) ON DELETE CASCADE
+);
+
+---
+
+API Design
+The backend will expose RESTful APIs for the frontend to interact with. Here are some of the key endpoints:
+Authentication APIs
+POST /auth/register: Registers a new user.
+
+Request Body:
+{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "password123"
+}
+Response:
+{
+    "message": "User registered successfully."
+}
+POST /auth/login: Authenticates a user and returns a token.
+
+Request Body:
+{
+    "email": "john@example.com",
+    "password": "password123"
+}
+Response:
+{
+    "token": "jwt_token_here"
+}
+Task Management APIs
+GET /tasks: Retrieves all tasks for the authenticated user.
+
+Response:
+[
+    {
+        "id": 1,
+        "title": "Complete project",
+        "status": "in_progress",
+        "priority": "high",
+        "due_date": "2025-05-12"
+    }
+]
+POST /tasks: Create a new task.
+
+Request Body:
+{
+    "title": "Buy groceries",
+    "description": "Milk, bread, eggs",
+    "priority": "medium",
+    "due_date": "2025-05-09"
+}
+PUT /tasks/***:id: Updates a task.
+
+Request Body:
+{
+    "status": "completed"
+}
+DELETE /tasks/***:id: Deletes a task.
+
+Notification APIs
+GET /notifications: Fetches notifications for the user.
+PUT /notifications/:id/mark-read: Marks a notification as read.
+
+---
+
+Key Workflows
+User Registration
+- User sends a POST /auth/register request.
+- Backend hashes the password and stores the user in the Users table.
+- A success response is sent to the client.
+Task Creation
+ - User sends a POST /tasks request with task details.
+- Backend validates the input and stores the task in the Tasks table.
+- The task ID is returned to the client.
+Real-Time Notifications
+ - Backend identifies overdue tasks and generates notifications.
+- Notifications are stored in the Notifications table.
+- WebSocket pushes notifications to the client.
+
+---
+
+Pitfalls and Considerations
+Database Relationships: Ensure foreign keys are properly defined to maintain data integrity.
+Validation: Validate API inputs to prevent invalid or malicious data.
+Scalability: Plan indexing for frequently queried fields like status and priority in the Tasks table.
+Security: Hash passwords securely using a library like bcrypt.
+
+---
+
+Optional Extensions
+Add pagination support for fetching tasks and notifications.
+Implement soft deletes for tasks by adding an is_deleted column instead of physically removing them.
+Add more metadata to tasks, like attachments or collaborators.
+
+---
+
+Next Steps
+In tomorrow's post, we'll set up the backend with Node.js, laying the groundwork for API implementation and database integration. Stay tuned as we bring our design to life!
